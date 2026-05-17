@@ -56,7 +56,7 @@
     </h1>
 
     <p class="text-gray-300 text-lg mb-10">
-      2 Hour Countdown • Audio Alert at 30 Minutes
+      2 Hour Countdown • Audio Every 30 Minutes
     </p>
 
     <!-- Timer -->
@@ -89,12 +89,12 @@
         Start Timer
       </button>
 
-      <!-- Test Audio Button -->
-      <button
+      <!-- Test Audio -->
+      <!-- <button
         id="testAudioBtn"
         class="bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300 text-white font-semibold px-6 py-4 rounded-2xl">
         Test Audio
-      </button>
+      </button> -->
 
     </div>
 
@@ -111,7 +111,7 @@
     // SETTINGS
     // =========================
 
-    const totalTime = 2 * 60 * 60; // 2 hours
+    const totalTime = 2 * 60 * 60; // 2 Hours
     let timeLeft = totalTime;
 
     // =========================
@@ -127,10 +127,9 @@
     const testAudioBtn = document.getElementById("testAudioBtn");
 
     let countdown;
-    let audioPlayed = false;
 
     // =========================
-    // TIMER FUNCTION
+    // UPDATE TIMER
     // =========================
 
     function updateTimer() {
@@ -144,19 +143,25 @@
         String(minutes).padStart(2, '0') + ":" +
         String(seconds).padStart(2, '0');
 
-      // Progress
+      // Progress Bar
       const progressPercent = (timeLeft / totalTime) * 100;
       progress.style.width = progressPercent + "%";
 
       // =========================
-      // PLAY AUDIO AT 30 MINUTES
+      // AUDIO EVERY 30 MINUTES
       // =========================
 
-      if (timeLeft === 30 * 60 && !audioPlayed) {
+      if (
+        timeLeft % (30 * 60) === 0 &&
+        timeLeft !== totalTime
+      ) {
 
         audio.play();
-        audioPlayed = true;
 
+        status.innerText =
+          `🔔 Alert at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+
+        // Change timer color
         timer.classList.remove("text-green-400");
         timer.classList.add("text-red-500");
 
@@ -169,15 +174,10 @@
           "from-red-500",
           "to-orange-500"
         );
-
-        status.innerText = "⚠ 30 Minutes Remaining";
-
-        status.className =
-          "mt-6 inline-block px-5 py-2 rounded-full bg-red-500/20 text-red-300 font-medium border border-red-500/30";
       }
 
       // =========================
-      // LAST 5 MINUTES
+      // FINAL 5 MINUTES
       // =========================
 
       if (timeLeft <= 300) {
@@ -198,7 +198,7 @@
 
         progress.style.width = "0%";
 
-        status.innerText = "Session Completed";
+        status.innerText = "✅ Session Completed";
 
         status.className =
           "mt-6 inline-block px-5 py-2 rounded-full bg-white/10 text-white font-medium border border-white/20";
@@ -226,14 +226,13 @@
       // Prevent multiple starts
       if (countdown) return;
 
-      status.innerText = "Running...";
+      status.innerText = "⏳ Running...";
 
       updateTimer();
 
       countdown = setInterval(updateTimer, 1000);
 
       startBtn.innerText = "Started";
-
       startBtn.disabled = true;
 
       startBtn.classList.remove(
