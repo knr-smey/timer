@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Focus Countdown</title>
+  <title>Auto Focus Timer</title>
 
-  <!-- Tailwind CSS -->
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Font -->
@@ -18,7 +18,7 @@
     }
 
     .glass {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255,255,255,0.08);
       backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.12);
     }
@@ -28,7 +28,7 @@
     }
 
     @keyframes pulse {
-      0%, 100% {
+      0%,100% {
         transform: scale(1);
       }
       50% {
@@ -38,12 +38,12 @@
   </style>
 </head>
 
-<body class="min-h-screen overflow-hidden bg-black flex items-center justify-center relative">
+<body class="min-h-screen bg-black overflow-hidden flex items-center justify-center relative">
 
   <!-- Background -->
   <div class="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-blue-900"></div>
 
-  <!-- Glow Effects -->
+  <!-- Glow -->
   <div class="absolute w-96 h-96 bg-purple-500/20 rounded-full blur-3xl top-10 left-10"></div>
   <div class="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl bottom-10 right-10"></div>
 
@@ -59,6 +59,12 @@
       2 Hour Countdown • Audio Every 30 Minutes
     </p>
 
+    <!-- Live Clock -->
+    <div id="clock"
+      class="text-gray-400 text-xl mb-6">
+      Loading Time...
+    </div>
+
     <!-- Timer -->
     <div id="timer"
       class="text-7xl md:text-9xl font-extrabold tracking-widest text-green-400 pulse transition-all duration-500">
@@ -69,7 +75,7 @@
     <div class="mt-10 w-full bg-white/10 rounded-full h-4 overflow-hidden">
       <div id="progress"
         class="bg-gradient-to-r from-green-400 to-emerald-500 h-4 rounded-full transition-all duration-1000"
-        style="width: 100%">
+        style="width:100%">
       </div>
     </div>
 
@@ -101,7 +107,10 @@
   </div>
 
   <!-- Audio -->
-  <audio id="alertAudio">
+  <audio
+    id="alertAudio"
+    preload="auto"
+    playsinline>
     <source src="audio.mp3" type="audio/mpeg">
   </audio>
 
@@ -111,7 +120,7 @@
     // SETTINGS
     // =========================
 
-    const totalTime = 2 * 60 * 60; // 2 Hours
+    const totalTime = 2 * 60 * 60; // 2 hours
     let timeLeft = totalTime;
 
     // =========================
@@ -122,11 +131,30 @@
     const progress = document.getElementById("progress");
     const status = document.getElementById("status");
     const audio = document.getElementById("alertAudio");
+    const clock = document.getElementById("clock");
 
     const startBtn = document.getElementById("startBtn");
     const testAudioBtn = document.getElementById("testAudioBtn");
 
     let countdown;
+
+    // =========================
+    // LIVE CLOCK
+    // =========================
+
+    function updateClock() {
+
+      const now = new Date();
+
+      const time = now.toLocaleTimeString("en-US", {
+        hour12: false
+      });
+
+      clock.innerText = `Current Time: ${time}`;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
 
     // =========================
     // UPDATE TIMER
@@ -143,12 +171,12 @@
         String(minutes).padStart(2, '0') + ":" +
         String(seconds).padStart(2, '0');
 
-      // Progress Bar
+      // Progress
       const progressPercent = (timeLeft / totalTime) * 100;
       progress.style.width = progressPercent + "%";
 
       // =========================
-      // AUDIO EVERY 30 MINUTES
+      // PLAY AUDIO EVERY 30 MIN
       // =========================
 
       if (
@@ -156,12 +184,16 @@
         timeLeft !== totalTime
       ) {
 
-        audio.play();
+        audio.currentTime = 0;
+
+        audio.play().catch((err) => {
+          console.log("Audio blocked:", err);
+        });
 
         status.innerText =
           `🔔 Alert at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
-        // Change timer color
+        // Change color
         timer.classList.remove("text-green-400");
         timer.classList.add("text-red-500");
 
@@ -177,7 +209,7 @@
       }
 
       // =========================
-      // FINAL 5 MINUTES
+      // LAST 5 MINUTES
       // =========================
 
       if (timeLeft <= 300) {
@@ -193,6 +225,7 @@
         clearInterval(countdown);
 
         timer.innerHTML = "TIME UP!";
+
         timer.classList.remove("text-red-500");
         timer.classList.add("text-white");
 
@@ -203,7 +236,11 @@
         status.className =
           "mt-6 inline-block px-5 py-2 rounded-full bg-white/10 text-white font-medium border border-white/20";
 
-        audio.play();
+        audio.currentTime = 0;
+
+        audio.play().catch((err) => {
+          console.log("Final audio blocked:", err);
+        });
 
         return;
       }
@@ -212,19 +249,25 @@
     }
 
     // =========================
-    // START BUTTON
+    // START TIMER
     // =========================
 
-    startBtn.addEventListener("click", () => {
-
-      // Unlock browser audio
-      audio.play().then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
+    function startTimer() {
 
       // Prevent multiple starts
       if (countdown) return;
+
+      // Unlock Safari/iPhone audio
+      audio.load();
+
+      audio.play()
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        })
+        .catch((err) => {
+          console.log("Safari blocked audio:", err);
+        });
 
       status.innerText = "⏳ Running...";
 
@@ -245,14 +288,26 @@
         "to-gray-700",
         "cursor-not-allowed"
       );
-    });
+    }
 
     // =========================
-    // TEST AUDIO BUTTON
+    // START BUTTON
+    // =========================
+
+    startBtn.addEventListener("click", startTimer);
+
+    // =========================
+    // TEST AUDIO
     // =========================
 
     testAudioBtn.addEventListener("click", () => {
-      audio.play();
+
+      audio.currentTime = 0;
+
+      audio.play().catch((err) => {
+        console.log("Test audio blocked:", err);
+      });
+
     });
 
   </script>
