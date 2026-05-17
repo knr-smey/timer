@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Focus Countdown</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.03);
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen overflow-hidden bg-black flex items-center justify-center relative">
+
+  <!-- Background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-blue-900"></div>
+
+  <!-- Glow Effects -->
+  <div class="absolute w-96 h-96 bg-purple-500/20 rounded-full blur-3xl top-10 left-10"></div>
+  <div class="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl bottom-10 right-10"></div>
+
+  <!-- Main Card -->
+  <div class="glass relative z-10 rounded-3xl shadow-2xl p-10 w-[90%] max-w-3xl text-center">
+
+    <!-- Title -->
+    <h1 class="text-white text-5xl md:text-6xl font-bold mb-4">
+      Focus Timer
+    </h1>
+
+    <p class="text-gray-300 text-lg mb-10">
+      2 Hour Countdown • Audio Alert at 30 Minutes
+    </p>
+
+    <!-- Timer -->
+    <div id="timer"
+      class="text-7xl md:text-9xl font-extrabold tracking-widest text-green-400 pulse transition-all duration-500">
+      02:00:00
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="mt-10 w-full bg-white/10 rounded-full h-4 overflow-hidden">
+      <div id="progress"
+        class="bg-gradient-to-r from-green-400 to-emerald-500 h-4 rounded-full transition-all duration-1000"
+        style="width: 100%">
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="status"
+      class="mt-6 inline-block px-5 py-2 rounded-full bg-green-500/20 text-green-300 font-medium border border-green-500/30">
+      Ready to Start
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex justify-center gap-4 mt-8 flex-wrap">
+
+      <!-- Start Button -->
+      <button
+        id="startBtn"
+        class="bg-gradient-to-r from-green-400 to-emerald-500 hover:scale-105 transition-all duration-300 text-black font-bold px-8 py-4 rounded-2xl shadow-xl text-xl">
+        Start Timer
+      </button>
+
+      <!-- Test Audio Button -->
+      <button
+        id="testAudioBtn"
+        class="bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300 text-white font-semibold px-6 py-4 rounded-2xl">
+        Test Audio
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- Audio -->
+  <audio id="alertAudio">
+    <source src="audio.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+
+    // =========================
+    // SETTINGS
+    // =========================
+
+    const totalTime = 2 * 60 * 60; // 2 hours
+    let timeLeft = totalTime;
+
+    // =========================
+    // ELEMENTS
+    // =========================
+
+    const timer = document.getElementById("timer");
+    const progress = document.getElementById("progress");
+    const status = document.getElementById("status");
+    const audio = document.getElementById("alertAudio");
+
+    const startBtn = document.getElementById("startBtn");
+    const testAudioBtn = document.getElementById("testAudioBtn");
+
+    let countdown;
+    let audioPlayed = false;
+
+    // =========================
+    // TIMER FUNCTION
+    // =========================
+
+    function updateTimer() {
+
+      const hours = Math.floor(timeLeft / 3600);
+      const minutes = Math.floor((timeLeft % 3600) / 60);
+      const seconds = timeLeft % 60;
+
+      timer.textContent =
+        String(hours).padStart(2, '0') + ":" +
+        String(minutes).padStart(2, '0') + ":" +
+        String(seconds).padStart(2, '0');
+
+      // Progress
+      const progressPercent = (timeLeft / totalTime) * 100;
+      progress.style.width = progressPercent + "%";
+
+      // =========================
+      // PLAY AUDIO AT 30 MINUTES
+      // =========================
+
+      if (timeLeft === 30 * 60 && !audioPlayed) {
+
+        audio.play();
+        audioPlayed = true;
+
+        timer.classList.remove("text-green-400");
+        timer.classList.add("text-red-500");
+
+        progress.classList.remove(
+          "from-green-400",
+          "to-emerald-500"
+        );
+
+        progress.classList.add(
+          "from-red-500",
+          "to-orange-500"
+        );
+
+        status.innerText = "⚠ 30 Minutes Remaining";
+
+        status.className =
+          "mt-6 inline-block px-5 py-2 rounded-full bg-red-500/20 text-red-300 font-medium border border-red-500/30";
+      }
+
+      // =========================
+      // LAST 5 MINUTES
+      // =========================
+
+      if (timeLeft <= 300) {
+        timer.classList.add("animate-bounce");
+      }
+
+      // =========================
+      // TIME UP
+      // =========================
+
+      if (timeLeft <= 0) {
+
+        clearInterval(countdown);
+
+        timer.innerHTML = "TIME UP!";
+        timer.classList.remove("text-red-500");
+        timer.classList.add("text-white");
+
+        progress.style.width = "0%";
+
+        status.innerText = "Session Completed";
+
+        status.className =
+          "mt-6 inline-block px-5 py-2 rounded-full bg-white/10 text-white font-medium border border-white/20";
+
+        audio.play();
+
+        return;
+      }
+
+      timeLeft--;
+    }
+
+    // =========================
+    // START BUTTON
+    // =========================
+
+    startBtn.addEventListener("click", () => {
+
+      // Unlock browser audio
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+
+      // Prevent multiple starts
+      if (countdown) return;
+
+      status.innerText = "Running...";
+
+      updateTimer();
+
+      countdown = setInterval(updateTimer, 1000);
+
+      startBtn.innerText = "Started";
+
+      startBtn.disabled = true;
+
+      startBtn.classList.remove(
+        "from-green-400",
+        "to-emerald-500"
+      );
+
+      startBtn.classList.add(
+        "from-gray-500",
+        "to-gray-700",
+        "cursor-not-allowed"
+      );
+    });
+
+    // =========================
+    // TEST AUDIO BUTTON
+    // =========================
+
+    testAudioBtn.addEventListener("click", () => {
+      audio.play();
+    });
+
+  </script>
+
+</body>
+</html>
